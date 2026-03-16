@@ -1,171 +1,530 @@
-# Node.js Express TypeScript RESTful API
+# Satryawiguna API
 
-A robust, fully-featured RESTful API built with Node.js, Express, TypeScript, and PostgreSQL, following clean architecture principles.
+Professional RESTful API built with FastAPI, following best practices with layered architecture.
 
 ## Features
 
-- **TypeScript** - Type-safe code development
-- **Express** - Fast, unopinionated web framework for Node.js
-- **PostgreSQL** - Robust relational database
-- **Prisma ORM** - Modern database toolkit
-- **Authentication & Authorization** - JWT-based authentication and role-based access control
-- **API Documentation** - Swagger/OpenAPI documentation
-- **Input Validation** - Request validation using Zod
-- **Testing** - Unit and integration tests with Jest
-- **Clean Architecture** - Well-defined separation of concerns
+- ✅ FastAPI with async support
+- ✅ Layered architecture (Controller → Service → Repository)
+- ✅ MySQL database with SQLAlchemy ORM
+- ✅ Alembic for database migrations
+- ✅ Pydantic for data validation
+- ✅ Swagger documentation (Basic Auth protected)
+- ✅ Standardized response format
+- ✅ Pagination support
+- ✅ Database seeders
 
 ## Project Structure
 
 ```
-├── src/
-│   ├── config/        # Application configuration
-│   ├── controllers/   # Request handlers
-│   ├── services/      # Business logic
-│   ├── repositories/  # Data access layer
-│   ├── routes/        # Route definitions
-│   ├── models/        # Data models
-│   ├── middlewares/   # Express middlewares
-│   ├── validators/    # Request validation schemas
-│   ├── types/         # TypeScript type definitions
-│   ├── utils/         # Utility functions
-│   ├── database/      # Database related code
-│   ├── app.ts         # Express application setup
-│   └── server.ts      # Server entry point
-├── prisma/            # Prisma schema and migrations
-├── tests/             # Test files
-├── .env               # Environment variables (not committed)
-├── .env.example       # Example environment variables
-├── package.json       # Project dependencies
-└── tsconfig.json      # TypeScript configuration
+api.satryawiguna.me/
+├── app/
+│   ├── api/            # API routes/controllers
+│   ├── core/           # Core configuration
+│   ├── models/         # Database models
+│   ├── repositories/   # Data access layer
+│   ├── schemas/        # Pydantic schemas
+│   ├── services/       # Business logic layer
+│   └── utils/          # Utilities
+├── alembic/            # Database migrations
+├── seeders/            # Database seeders
+├── .env.example
+├── main.py
+└── requirements.txt
 ```
 
-## Prerequisites
+## Setup
 
-- Node.js (v16 or later)
-- PostgreSQL
-- npm or yarn
+1. **Install dependencies:**
 
-## Getting Started
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-### Installation
+2. **Configure environment:**
 
-1. Clone the repository
+   ```bash
+   cp .env.example .env
+   # Edit .env with your settings
+   ```
+
+3. **Run migrations:**
+
+   ```bash
+   python manage.py migrate
+   ```
+
+4. **Seed database:**
+
+   ```bash
+   python manage.py seed
+   ```
+
+5. **Run server:**
+   ```bash
+   python manage.py runserver
+   # or
+   uvicorn main:app --reload
+   ```
+
+## Available Commands
 
 ```bash
-git clone https://github.com/yourusername/api.satryawiguna.me.git
-cd api.satryawiguna.me
+# Run migrations
+python manage.py migrate
+
+# Fresh migration (drop all tables and recreate)
+python manage.py migrate:fresh
+
+# Rollback last migration
+python manage.py migrate:rollback
+
+# Seed database
+python manage.py seed
+
+# Create new migration
+python manage.py make:migration <migration_name>
+
+# Run development server
+python manage.py runserver
 ```
 
-2. Install dependencies
+## API Documentation
 
-```bash
-npm install
-```
+Access Swagger documentation at: `http://localhost:8000/docs`
 
-3. Set up environment variables
+**Credentials:**
 
-```bash
-cp .env.example .env
-# Update .env with your own values
-```
-
-4. Set up the database
-
-```bash
-# Create a PostgreSQL database
-npx prisma migrate dev
-npx prisma generate
-```
-
-5. Seed the database
-
-```bash
-npm run seed
-```
-
-### Running the Application
-
-```bash
-# Development
-npm run dev
-
-# Production
-npm run build
-npm start
-```
-
-### API Documentation
-
-API documentation is available at:
-
-```
-http://localhost:3000/api-docs
-```
-
-**Access Information**:
-
-- API documentation is only available in development and staging environments
-- Basic authentication is required to access the documentation
-  - Username: `admin`
-  - Password: `swagger-secret`
-
-### Default Users
-
-After seeding, the following user is available:
-
-- Email: admin@example.com
-- Password: Admin@123
-- Role: ADMIN
-
-## Available Scripts
-
-- `npm run dev` - Run the application in development mode
-- `npm run build` - Build the application for production
-- `npm start` - Start the application in production mode
-- `npm test` - Run tests
-- `npm run lint` - Lint the codebase
-- `npm run format` - Format the codebase
-- `npm run seed` - Seed the database
-- `npm run migrate:dev` - Run database migrations in development
-- `npm run migrate:deploy` - Deploy database migrations in production
-- `npm run prisma:generate` - Generate Prisma client
-- `npm run prisma:studio` - Open Prisma Studio
+- Username: `admin`
+- Password: `admin123`
 
 ## Authentication
 
-The API uses JWT-based authentication. To access protected endpoints:
+The API uses JWT (JSON Web Tokens) for authentication. The authentication system includes:
 
-1. Register a new user or use the default admin account
-2. Login to receive an access token
-3. Include the token in the Authorization header: `Bearer <token>`
+- **Login**: Email/password authentication with JWT tokens
+- **Refresh Token**: Long-lived tokens for obtaining new access tokens
+- **Protected Endpoints**: Require valid JWT access token
+- **Password Management**: Change password, forgot password, reset password
 
-## Authorization
+### Authentication Flow
 
-The API implements role-based access control:
+1. **Login** to get access token and refresh token
+2. **Use access token** in Authorization header for protected endpoints
+3. **Refresh** access token when it expires using refresh token
+4. **Logout** to revoke refresh token
 
-- **ADMIN** - Full access to all endpoints
-- **STAFF** - Limited access for regular operations
-- **DEVELOPER** - Access to API documentation and limited features
+### Endpoints
 
-## Testing
+#### POST `/api/v1/auth/login`
 
-```bash
-# Run all tests
-npm test
+Login with email and password.
 
-# Run tests with coverage
-npm run test:coverage
+**Request Body:**
+
+```json
+{
+  "email": "admin@satryawiguna.me",
+  "password": "admin123"
+}
 ```
 
-## Deployment
+**Response:**
 
-For production deployment:
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Login successful",
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6...",
+    "tokenType": "Bearer",
+    "expiresIn": "15m",
+    "refreshExpiresIn": "7d",
+    "user": {
+      "id": 1,
+      "name": "Admin User",
+      "email": "admin@satryawiguna.me",
+      "isActive": true,
+      "roles": [
+        {
+          "id": 1,
+          "name": "Admin",
+          "slug": "admin"
+        }
+      ]
+    }
+  },
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
 
-1. Set up your environment variables for production
-2. Build the application: `npm run build`
-3. Deploy database migrations: `npm run migrate:deploy`
-4. Start the application: `npm start`
+#### POST `/api/v1/auth/refresh`
+
+Refresh access token using refresh token.
+
+**Request Body:**
+
+```json
+{
+  "refreshToken": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6..."
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Token refreshed successfully",
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "x1y2z3a4b5c6d7e8f9g0h1i2j3k4l5m6...",
+    "tokenType": "Bearer",
+    "expiresIn": "15m",
+    "refreshExpiresIn": "7d",
+    "user": {...}
+  },
+  "timestamp": "2024-01-15T10:45:00Z"
+}
+```
+
+#### GET `/api/v1/auth/me`
+
+Get current authenticated user information.
+
+**Headers:**
+
+```
+Authorization: Bearer <access_token>
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "User retrieved successfully",
+  "data": {
+    "id": 1,
+    "name": "Admin User",
+    "email": "admin@satryawiguna.me",
+    "isActive": true,
+    "roles": [
+      {
+        "id": 1,
+        "name": "Admin",
+        "slug": "admin"
+      }
+    ]
+  },
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+#### POST `/api/v1/auth/logout`
+
+Logout by revoking refresh token.
+
+**Headers:**
+
+```
+Authorization: Bearer <access_token>
+```
+
+**Request Body:**
+
+```json
+{
+  "refreshToken": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6..."
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Logout successful",
+  "timestamp": "2024-01-15T11:00:00Z"
+}
+```
+
+#### POST `/api/v1/auth/change-password`
+
+Change user password (requires authentication).
+
+**Headers:**
+
+```
+Authorization: Bearer <access_token>
+```
+
+**Request Body:**
+
+```json
+{
+  "currentPassword": "admin123",
+  "newPassword": "newpassword123",
+  "newPasswordConfirmation": "newpassword123"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Password changed successfully",
+  "timestamp": "2024-01-15T11:15:00Z"
+}
+```
+
+#### POST `/api/v1/auth/forgot-password`
+
+Request password reset email.
+
+**Request Body:**
+
+```json
+{
+  "email": "admin@satryawiguna.me"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Password reset email sent (not implemented)",
+  "timestamp": "2024-01-15T11:20:00Z"
+}
+```
+
+#### POST `/api/v1/auth/reset-password`
+
+Reset password with token from email.
+
+**Request Body:**
+
+```json
+{
+  "token": "reset_token_from_email",
+  "password": "newpassword123",
+  "passwordConfirmation": "newpassword123"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Password reset successful (not implemented)",
+  "timestamp": "2024-01-15T11:25:00Z"
+}
+```
+
+### Using Authentication in Your Requests
+
+**Example with cURL:**
+
+```bash
+# Login
+curl -X POST http://localhost:8000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@satryawiguna.me","password":"admin123"}'
+
+# Use access token for protected endpoints
+curl http://localhost:8000/api/v1/auth/me \
+  -H "Authorization: Bearer <access_token>"
+```
+
+**Example with JavaScript (fetch):**
+
+```javascript
+// Login
+const loginResponse = await fetch("http://localhost:8000/api/v1/auth/login", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    email: "admin@satryawiguna.me",
+    password: "admin123",
+  }),
+});
+const { data } = await loginResponse.json();
+const { accessToken, refreshToken } = data;
+
+// Use access token for protected endpoints
+const userResponse = await fetch("http://localhost:8000/api/v1/auth/me", {
+  headers: { Authorization: `Bearer ${accessToken}` },
+});
+```
+
+### Token Expiration
+
+- **Access Token**: Expires in 15 minutes
+- **Refresh Token**: Expires in 7 days
+
+When the access token expires, use the refresh token to obtain a new one without requiring the user to log in again.
+
+### Test Users
+
+The following test users are available after seeding:
+
+| Email                 | Password    | Role   |
+| --------------------- | ----------- | ------ |
+| admin@satryawiguna.me | admin123    | Admin  |
+| john@example.com      | password123 | Author |
+| jane@example.com      | password123 | User   |
+
+## Pagination
+
+List endpoints support both paginated and non-paginated responses:
+
+**With Pagination (default):**
+
+```
+GET /api/v1/users?page=1&limit=10
+```
+
+Response includes `pagination` metadata:
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Users retrieved successfully",
+  "data": [...],
+  "pagination": {
+    "total": 25,
+    "page": 1,
+    "limit": 10,
+    "totalPages": 3,
+    "hasNextPage": true,
+    "hasPreviousPage": false
+  },
+  "timestamp": "2026-03-16T00:00:00.000Z"
+}
+```
+
+**Without Pagination:**
+Set `limit` to `null` or omit it to get all records:
+
+```
+GET /api/v1/users?limit=null
+```
+
+Response without pagination metadata:
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Users retrieved successfully",
+  "data": [...],
+  "timestamp": "2026-03-16T00:00:00.000Z"
+}
+```
+
+**Query Parameters:**
+
+- `page`: Page number (default: 1, only used with pagination)
+- `limit`: Items per page (default: 10, set to `null` for all records)
+- `sortBy`: Field to sort by (default: `created_at`)
+- `sortOrder`: Sort order - `ASC` or `DESC` (default: `DESC`)
+- `keyword`: Search keyword (optional)
+
+## Response Format
+
+All API responses follow a standardized format:
+
+**Success (no data):**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Success",
+  "timestamp": "2026-03-16T00:00:00.000Z"
+}
+```
+
+**Success (single item):**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "User retrieved successfully",
+  "data": {
+    "id": 1,
+    "name": "Admin User",
+    "email": "admin@satryawiguna.me",
+    "created_at": "2026-03-15T22:22:19",
+    "updated_at": "2026-03-15T22:22:19"
+  },
+  "timestamp": "2026-03-16T00:00:00.000Z"
+}
+```
+
+**Success (list without pagination):**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Users retrieved successfully",
+  "data": [
+    {...},
+    {...}
+  ],
+  "timestamp": "2026-03-16T00:00:00.000Z"
+}
+```
+
+**Success (list with pagination):**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Users retrieved successfully",
+  "data": [
+    {...},
+    {...}
+  ],
+  "pagination": {
+    "total": 25,
+    "page": 1,
+    "limit": 10,
+    "totalPages": 3,
+    "hasNextPage": true,
+    "hasPreviousPage": false
+  },
+  "timestamp": "2026-03-16T00:00:00.000Z"
+}
+```
+
+**Error:**
+
+```json
+{
+  "success": false,
+  "status": 404,
+  "message": "User not found",
+  "timestamp": "2026-03-16T00:00:00.000Z"
+}
+```
 
 ## License
 
-This project is licensed under the MIT License.
+MIT
