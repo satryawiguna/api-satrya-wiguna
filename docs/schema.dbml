@@ -3,6 +3,8 @@ id bigint [pk, increment]
 name varchar
 email varchar [unique]
 password varchar
+phone varchar
+otp varchar
 email_verified_at timestamp
 is_active boolean
 created_at timestamp
@@ -96,16 +98,6 @@ company varchar
 content text
 avatar_id bigint
 featured boolean
-created_at timestamp
-}
-
-Table contact_messages {
-id bigint [pk, increment]
-name varchar
-email varchar
-subject varchar
-message text
-is_read boolean
 created_at timestamp
 }
 

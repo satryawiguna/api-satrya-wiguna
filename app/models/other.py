@@ -1,5 +1,5 @@
 """
-Skill, Testimonial, ContactMessage, Media and Settings models
+Skill, Testimonial, Media and Settings models
 """
 from sqlalchemy import Column, BigInteger, String, Text, Integer, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
@@ -35,19 +35,6 @@ class Testimonial(Base):
     
     # Relationships
     avatar = relationship("Media", foreign_keys=[avatar_id])
-
-
-class ContactMessage(Base):
-    """ContactMessage model"""
-    __tablename__ = "contact_messages"
-    
-    id = Column(BigInteger, primary_key=True, index=True, autoincrement=True)
-    name = Column(String(255), nullable=False)
-    email = Column(String(255), nullable=False)
-    subject = Column(String(255), nullable=True)
-    message = Column(Text, nullable=False)
-    is_read = Column(Boolean, default=False, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 
 class Media(Base):

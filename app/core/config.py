@@ -2,6 +2,7 @@
 Application configuration
 """
 from pydantic_settings import BaseSettings
+from pydantic import model_validator
 from typing import List
 
 
@@ -25,8 +26,9 @@ class Settings(BaseSettings):
     DB_PASSWORD: str = ""
     DB_NAME: str = "satryawiguna_db"
     
-    # JWT
-    JWT_SECRET_KEY: str = "your-secret-key-change-this-in-production"
+    # JWT — JWT_SECRET_KEY has no default; it MUST be set in the environment.
+    # Generate a strong key with: python -c "import secrets; print(secrets.token_hex(64))"
+    JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
@@ -39,9 +41,30 @@ class Settings(BaseSettings):
     
     @property
     def DATABASE_URL(self) -> str:
-        """Build database URL"""
+        """Sync database URL — used by Alembic migrations and CLI seeders"""
         return f"mysql+pymysql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+
+    @property
+    def ASYNC_DATABASE_URL(self) -> str:
+        """Async database URL — used by the FastAPI application"""
+        return f"mysql+aiomysql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
     
+    @model_validator(mode="after")
+    def validate_secrets(self) -> "Settings":
+        known_weak = {
+            "your-secret-key-change-this-in-production",
+            "secret",
+            "changeme",
+            "change-this",
+        }
+        if self.JWT_SECRET_KEY.lower() in known_weak or len(self.JWT_SECRET_KEY) < 32:
+            raise ValueError(
+                "JWT_SECRET_KEY is insecure. "
+                "Set a strong random value (>=32 chars) in your .env file. "
+                "Generate one with: python -c \"import secrets; print(secrets.token_hex(64))\""
+            )
+        return self
+
     class Config:
         env_file = ".env"
         case_sensitive = True

@@ -35,32 +35,50 @@ api.satryawiguna.me/
 
 ## Setup
 
-1. **Install dependencies:**
+1. **Create and activate virtual environment:**
+
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate
+   ```
+
+2. **Install dependencies:**
 
    ```bash
    pip install -r requirements.txt
    ```
 
-2. **Configure environment:**
+   Generate a strong JWT secret:
+
+   ```bash
+   openssl rand -hex 32
+   ```
+
+3. **Configure environment:**
 
    ```bash
    cp .env.example .env
    # Edit .env with your settings
    ```
 
-3. **Run migrations:**
+4. **Run migrations:**
+
+   ```bash
+   # Create the MySQL database first
+   createdb satryawiguna
+   ```
 
    ```bash
    python manage.py migrate
    ```
 
-4. **Seed database:**
+5. **Seed database:**
 
    ```bash
    python manage.py seed
    ```
 
-5. **Run server:**
+6. **Run server:**
    ```bash
    python manage.py runserver
    # or

@@ -2,7 +2,7 @@
 Models package initialization
 Import all models to ensure they're registered with SQLAlchemy
 """
-from app.models.other import Media, Setting, Skill, Testimonial, ContactMessage
+from app.models.other import Media, Setting, Skill, Testimonial
 from app.models.user import User, Role, UserRole
 from app.models.project import Project, ProjectImage
 from app.models.blog import BlogPost, Category, Tag, BlogPostCategory, BlogPostTag
@@ -13,7 +13,7 @@ __all__ = [
     "Setting",
     "Skill",
     "Testimonial",
-    "ContactMessage",
+
     # User models
     "User",
     "Role",

@@ -3,7 +3,7 @@ Project API endpoints
 """
 from typing import Optional
 from fastapi import APIRouter, Depends, Query, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.schemas.project import ProjectCreate, ProjectUpdate, ProjectResponse
@@ -117,7 +117,7 @@ async def get_projects(
     sortOrder: str = Query("DESC", description="Sort order (ASC or DESC)"),
     keyword: Optional[str] = Query(None, description="Search keyword for title or description"),
     featured: Optional[bool] = Query(None, description="Filter by featured status"),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Get all projects with optional pagination and filters.
@@ -125,45 +125,40 @@ async def get_projects(
     Returns list of projects with or without pagination based on limit parameter.
     """
     service = ProjectService(db)
-    result = service.get_projects(
+    result = await service.get_projects(
         page=page,
         limit=limit,
         sort_by=sortBy,
         sort_order=sortOrder,
         keyword=keyword,
-        featured=featured
+        featured=featured,
     )
-    
-    # Convert to response format
+
     projects_data = [ProjectResponse.from_orm(project).model_dump() for project in result.items]
-    
-    # Build response
+
     if limit is None:
-        # No pagination
-        return APIResponse.success(
-            message="Projects retrieved successfully",
-            data=projects_data
-        )
-    else:
-        # With pagination
-        pagination = create_pagination_meta(result.total, result.page, result.limit)
         return APIResponse.success(
             message="Projects retrieved successfully",
             data=projects_data,
-            pagination=pagination
         )
+    pagination = create_pagination_meta(result.total, result.page, result.limit)
+    return APIResponse.success(
+        message="Projects retrieved successfully",
+        data=projects_data,
+        pagination=pagination,
+    )
 
 
 @router.get("/{project_id}")
 async def get_project(
     project_id: int,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Get a single project by ID
     """
     service = ProjectService(db)
-    project = service.get_project_by_id(project_id)
+    project = await service.get_project_by_id(project_id)
     
     if not project:
         return APIResponse.error(
@@ -182,14 +177,14 @@ async def get_project(
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_project(
     project_data: ProjectCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Create a new project
     """
     service = ProjectService(db)
-    project = service.create_project(project_data)
+    project = await service.create_project(project_data)
     
     project_response = ProjectResponse.from_orm(project).model_dump()
     
@@ -204,14 +199,14 @@ async def create_project(
 async def update_project(
     project_id: int,
     project_data: ProjectUpdate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Update a project
     """
     service = ProjectService(db)
-    project = service.update_project(project_id, project_data)
+    project = await service.update_project(project_id, project_data)
     
     project_response = ProjectResponse.from_orm(project).model_dump()
     
@@ -224,14 +219,14 @@ async def update_project(
 @router.delete("/{project_id}")
 async def delete_project(
     project_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Delete a project
     """
     service = ProjectService(db)
-    service.delete_project(project_id)
+    await service.delete_project(project_id)
     
     return APIResponse.success(
         message="Project deleted successfully"

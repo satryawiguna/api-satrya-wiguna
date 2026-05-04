@@ -10,6 +10,7 @@ class UserBase(BaseModel):
     """Base user schema"""
     name: str = Field(..., min_length=1, max_length=255)
     email: EmailStr
+    phone: Optional[str] = Field(None, max_length=20)
 
 
 class UserCreate(UserBase):
@@ -21,6 +22,7 @@ class UserUpdate(BaseModel):
     """Schema for updating a user"""
     name: Optional[str] = Field(None, min_length=1, max_length=255)
     email: Optional[EmailStr] = None
+    phone: Optional[str] = Field(None, max_length=20)
     password: Optional[str] = Field(None, min_length=6)
 
 

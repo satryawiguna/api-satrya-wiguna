@@ -3,7 +3,7 @@ Blog post API endpoints
 """
 from typing import Optional
 from fastapi import APIRouter, Depends, Query, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.schemas.blog import BlogPostCreate, BlogPostUpdate, BlogPostResponse
@@ -117,7 +117,7 @@ async def get_blog_posts(
     keyword: Optional[str] = Query(None, description="Search keyword for title or excerpt"),
     status: Optional[str] = Query(None, description="Filter by status (draft, published, etc.)"),
     author_id: Optional[int] = Query(None, description="Filter by author ID"),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Get all blog posts with optional pagination and filters.
@@ -125,46 +125,41 @@ async def get_blog_posts(
     Returns list of blog posts with or without pagination based on limit parameter.
     """
     service = BlogPostService(db)
-    result = service.get_blog_posts(
+    result = await service.get_blog_posts(
         page=page,
         limit=limit,
         sort_by=sortBy,
         sort_order=sortOrder,
         keyword=keyword,
         status=status,
-        author_id=author_id
+        author_id=author_id,
     )
-    
-    # Convert to response format
+
     posts_data = [BlogPostResponse.from_orm(post).model_dump() for post in result.items]
-    
-    # Build response
+
     if limit is None:
-        # No pagination
-        return APIResponse.success(
-            message="Blog posts retrieved successfully",
-            data=posts_data
-        )
-    else:
-        # With pagination
-        pagination = create_pagination_meta(result.total, result.page, result.limit)
         return APIResponse.success(
             message="Blog posts retrieved successfully",
             data=posts_data,
-            pagination=pagination
         )
+    pagination = create_pagination_meta(result.total, result.page, result.limit)
+    return APIResponse.success(
+        message="Blog posts retrieved successfully",
+        data=posts_data,
+        pagination=pagination,
+    )
 
 
 @router.get("/{post_id}")
 async def get_blog_post(
     post_id: int,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Get a single blog post by ID
     """
     service = BlogPostService(db)
-    post = service.get_blog_post_by_id(post_id)
+    post = await service.get_blog_post_by_id(post_id)
     
     if not post:
         return APIResponse.error(
@@ -183,14 +178,14 @@ async def get_blog_post(
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_blog_post(
     post_data: BlogPostCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Create a new blog post
     """
     service = BlogPostService(db)
-    post = service.create_blog_post(post_data)
+    post = await service.create_blog_post(post_data)
     
     post_response = BlogPostResponse.from_orm(post).model_dump()
     
@@ -205,14 +200,14 @@ async def create_blog_post(
 async def update_blog_post(
     post_id: int,
     post_data: BlogPostUpdate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Update a blog post
     """
     service = BlogPostService(db)
-    post = service.update_blog_post(post_id, post_data)
+    post = await service.update_blog_post(post_id, post_data)
     
     post_response = BlogPostResponse.from_orm(post).model_dump()
     
@@ -225,14 +220,14 @@ async def update_blog_post(
 @router.delete("/{post_id}")
 async def delete_blog_post(
     post_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Delete a blog post
     """
     service = BlogPostService(db)
-    service.delete_blog_post(post_id)
+    await service.delete_blog_post(post_id)
     
     return APIResponse.success(
         message="Blog post deleted successfully"

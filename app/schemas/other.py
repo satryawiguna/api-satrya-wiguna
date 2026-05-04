@@ -1,5 +1,5 @@
 """
-Other schemas (Skill, Testimonial, ContactMessage, Media, Setting)
+Other schemas (Skill, Testimonial, Media, Setting)
 """
 from pydantic import BaseModel, Field, EmailStr
 from typing import Optional
@@ -65,29 +65,6 @@ class TestimonialUpdate(BaseModel):
 class TestimonialResponse(TestimonialBase):
     """Schema for testimonial response"""
     id: int
-    created_at: datetime
-    
-    class Config:
-        from_attributes = True
-
-
-class ContactMessageBase(BaseModel):
-    """Base contact message schema"""
-    name: str = Field(..., min_length=1, max_length=255)
-    email: EmailStr
-    subject: Optional[str] = Field(None, max_length=255)
-    message: str = Field(..., min_length=1)
-
-
-class ContactMessageCreate(ContactMessageBase):
-    """Schema for creating a contact message"""
-    pass
-
-
-class ContactMessageResponse(ContactMessageBase):
-    """Schema for contact message response"""
-    id: int
-    is_read: bool
     created_at: datetime
     
     class Config:
